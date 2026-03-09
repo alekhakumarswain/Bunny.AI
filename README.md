@@ -1,6 +1,10 @@
 # 🐰 Bunny.AI - The Lean Large Action Model (LAM)
 
 <div align="center">
+  <img src="image.png" alt="Bunny.AI Preview" width="600" />
+</div>
+
+<div align="center">
   <img src="https://img.shields.io/badge/Bunny.AI-Large_Action_Model-f06292?style=for-the-badge&logo=ai" alt="Bunny.AI Badge" />
   <img src="https://img.shields.io/badge/Python-3.10+-3776ab?style=for-the-badge&logo=python" alt="Python Badge" />
   <img src="https://img.shields.io/badge/Status-Active-4caf50?style=for-the-badge" alt="Status Badge" />
