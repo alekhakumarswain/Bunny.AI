@@ -1,3 +1,4 @@
 .env
 __pycache__
 Tools/__pycache__
+.gitignore
