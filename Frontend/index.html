@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bunny.AI | The Lean Large Action Model (LAM)</title>
+    <meta name="description" content="Bunny.AI - A powerful, autonomous Large Action Model (LAM) designed for efficiency and action. Built for web mastery, email automation, and terminal control.">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-color: #0b0b0b;
+            --card-bg: rgba(20, 20, 22, 0.7);
+            --text-primary: #ffffff;
+            --text-secondary: #a1a1a1;
+            --neon-pink: #f06292;
+            --neon-cyan: #00e5ff;
+            --neon-purple: #bb86fc;
+            --accent-gradient: linear-gradient(135deg, #f06292, #bb86fc, #00e5ff);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            line-height: 1.6;
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(240, 98, 146, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 80% 80%, rgba(0, 229, 255, 0.05) 0%, transparent 40%);
+        }
+
+        h1, h2, h3 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+        }
+
+        /* Navbar */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 20px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            background: rgba(11, 11, 11, 0.8);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: 800;
+            font-family: 'Outfit', sans-serif;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-container span {
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: var(--transition);
+        }
+
+        .nav-links a:hover {
+            color: var(--text-primary);
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+
+        .nav-cta {
+            background: var(--text-primary);
+            color: var(--bg-color);
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: var(--transition);
+        }
+
+        .nav-cta:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+
+        /* Hero Section */
+        header {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 0 5%;
+            position: relative;
+        }
+
+        .hero-logo {
+            width: 300px;
+            margin-bottom: 30px;
+            filter: drop-shadow(0 0 30px rgba(240, 98, 146, 0.3));
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .hero-title {
+            font-size:clamp(2.5rem, 8vw, 5rem);
+            margin-bottom: 20px;
+            letter-spacing: -2px;
+            background: linear-gradient(to bottom, #fff 40%, #888);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-title span {
+            display: block;
+            font-size: 0.4em;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            font-weight: 500;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-top: 10px;
+        }
+
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin-bottom: 40px;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 20px;
+        }
+
+        .btn {
+            padding: 15px 35px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: var(--accent-gradient);
+            color: #fff;
+            box-shadow: 0 4px 25px rgba(187, 134, 252, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.05) translateY(-2px);
+            box-shadow: 0 10px 40px rgba(187, 134, 252, 0.6);
+        }
+
+        .btn-secondary {
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(5px);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Features Section */
+        .features {
+            padding: 100px 10%;
+            background: linear-gradient(to bottom, transparent, rgba(20, 20, 22, 1), transparent);
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 70px;
+        }
+
+        .section-header h2 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .section-header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .feature-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 40px;
+            border-radius: 24px;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            border-color: rgba(187, 134, 252, 0.3);
+            background: rgba(30,30,35,0.8);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 25px;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        /* Philosophy Section */
+        .philosophy {
+            padding: 100px 10%;
+            display: flex;
+            align-items: center;
+            gap: 80px;
+            flex-wrap: wrap;
+        }
+
+        .philosophy-content {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .philosophy-content h2 {
+            font-size: 3rem;
+            margin-bottom: 25px;
+            line-height: 1.1;
+        }
+
+        .philosophy-content p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+        }
+
+        .philosophy-image {
+            flex: 1;
+            min-width: 300px;
+            position: relative;
+        }
+
+        .terminal-window {
+            background: #1a1a1e;
+            border-radius: 12px;
+            border: 1px solid #333;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+            overflow: hidden;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .terminal-header {
+            background: #2a2a2e;
+            padding: 10px 15px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .red { background: #ff5f56; }
+        .yellow { background: #ffbd2e; }
+        .green { background: #27c93f; }
+
+        .terminal-body {
+            padding: 20px;
+            color: #d1d1d1;
+            font-size: 0.9rem;
+        }
+
+        .line { margin-bottom: 5px; }
+        .prompt { color: var(--neon-cyan); margin-right: 10px; }
+        .type-anim {
+            overflow: hidden;
+            border-right: .15em solid var(--neon-cyan);
+            white-space: nowrap;
+            letter-spacing: .10em;
+            animation: typing 3.5s steps(30, end) infinite;
+        }
+
+        @keyframes typing {
+            from { width: 0 }
+            to { width: 100% }
+        }
+
+        /* Getting Started */
+        .getting-started {
+            padding: 100px 10%;
+            text-align: center;
+        }
+
+        .code-box {
+            max-width: 600px;
+            margin: 40px auto;
+            background: #050505;
+            padding: 25px;
+            border-radius: 16px;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: left;
+        }
+
+        .code-box code {
+            color: var(--neon-cyan);
+            font-family: 'Courier New', monospace;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .copy-btn:hover { color: #fff; }
+
+        /* Footer */
+        footer {
+            padding: 60px 10%;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 30px;
+            color: var(--text-secondary);
+        }
+
+        .footer-logo { font-weight: 800; color: #fff; }
+        .footer-links { display: flex; gap: 40px; }
+        .footer-links a { color: var(--text-secondary); text-decoration: none; transition: var(--transition); }
+        .footer-links a:hover { color: #fff; }
+
+        .social-links { display: flex; gap: 20px; }
+        .social-links a { font-size: 1.2rem; color: var(--text-secondary); transition: var(--transition); }
+        .social-links a:hover { color: var(--neon-pink); transform: translateY(-3px); }
+
+        /* Chat Widget */
+        .chat-widget {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .chat-button {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--accent-gradient);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(187, 134, 252, 0.5);
+            transition: var(--transition);
+        }
+
+        .chat-button:hover {
+            transform: scale(1.1) rotate(15deg);
+        }
+
+        .chat-window {
+            width: 380px;
+            height: 500px;
+            background: rgba(15, 15, 20, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            margin-bottom: 20px;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        .chat-header {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chat-header h4 { font-family: 'Outfit', sans-serif; font-size: 1.1rem; }
+        .status-dot { width: 8px; height: 8px; background: #27c93f; border-radius: 50%; box-shadow: 0 0 10px #27c93f; }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .message.user {
+            background: rgba(255, 255, 255, 0.05);
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.bot {
+            background: rgba(187, 134, 252, 0.1);
+            border: 1px solid rgba(187, 134, 252, 0.2);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-input-area {
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 10px 15px;
+            color: #fff;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .chat-input:focus { border-color: var(--neon-cyan); }
+
+        .send-btn {
+            background: var(--neon-cyan);
+            color: #000;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .send-btn:hover { background: #fff; transform: scale(1.05); }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            nav { padding: 15px 5%; }
+            .nav-links { display: none; }
+            .hero-logo { width: 220px; }
+            .hero-title { font-size: 3.5rem; }
+            .philosophy { gap: 40px; }
+            .hero-actions { flex-direction: column; width: 100%; }
+            .btn { width: 100%; justify-content: center; }
+            .chat-window { width: calc(100vw - 40px); bottom: 90px; right: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo-container">
+            <i class="fas fa-rabbit"></i> Bunny.<span>AI</span>
+        </div>
+        <div class="nav-links">
+            <a href="#features">Features</a>
+            <a href="#about">About</a>
+            <a href="#install">Install</a>
+        </div>
+        <a href="https://github.com/alekhakumarswain/Bunny.AI" class="nav-cta">Star on GitHub</a>
+    </nav>
+
+    <header>
+        <img src="image.png" alt="Bunny.AI Logo" class="hero-logo">
+        <h1 class="hero-title">
+            The Leap into LAM.
+            <span>Large Action Model Active</span>
+        </h1>
+        <p class="hero-subtitle">
+            Bunny.AI is a compact, autonomous agent that doesn't just chat—it acts. 
+            Automate your life with efficiency in every line of code.
+        </p>
+        <div class="hero-actions">
+            <a href="#install" class="btn btn-primary">Get Started <i class="fas fa-rocket"></i></a>
+            <a href="https://github.com/alekhakumarswain/Bunny.AI" class="btn btn-secondary">View Source <i class="fab fa-github"></i></a>
+        </div>
+    </header>
+
+    <section id="features" class="features">
+        <div class="section-header">
+            <h2>Bunny's Versatile Arsenal</h2>
+            <p>Designed to be autonomous, persistent, and lightning fast.</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <i class="fas fa-clock feature-icon"></i>
+                <h3>Autonomy</h3>
+                <p>Schedule tasks to run in the background while you sleep. Uses a high-precision timer for all actions.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-envelope-open-text feature-icon"></i>
+                <h3>Email Pipeline</h3>
+                <p>Send professional reports, job applications, or automated alerts with beautiful HTML templates.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-globe feature-icon"></i>
+                <h3>Web Mastery</h3>
+                <p>Scrapes modern SPAs and React apps using its integrated Playwright engine for data pinpointing.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-terminal feature-icon"></i>
+                <h3>Terminal Power</h3>
+                <p>Full access to Windows shell for file management, system automation, and complex local workflows.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-microchip feature-icon"></i>
+                <h3>Multi-Backend</h3>
+                <p>Powered by Gemini 2.5 Flash, OpenAI GPT-4o, or fully local LLMs like gemma3 via Ollama.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-shield-halved feature-icon"></i>
+                <h3>Security Logic</h3>
+                <p>Built-in tools for reconnaissance and security scanning (Clickjacking, Headers, and more).</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="about" class="philosophy">
+        <div class="philosophy-content">
+            <h2>Built on Action,<br>Not Just Words.</h2>
+            <p>
+                In a world of heavy LLM applications, Bunny.AI stands out for its "lean" approach. 
+                Focusing on the <b>Large Action Model (LAM)</b> philosophy, Bunny minimizes 
+                the gap between thought and execution.
+            </p>
+            <p>
+                If a task needs 5 steps, Bunny does all 5 without asking for permission. 
+                Persistence is key—Bunny troubleshoots its own errors until the job is done.
+            </p>
+            <a href="https://alekhakumarswain.vercel.app" class="btn btn-secondary">Learn the Philosophy</a>
+        </div>
+        <div class="philosophy-image">
+            <div class="terminal-window">
+                <div class="terminal-header">
+                    <div class="dot red"></div>
+                    <div class="dot yellow"></div>
+                    <div class="dot green"></div>
+                </div>
+                <div class="terminal-body">
+                    <div class="line"><span class="prompt">Bunny@AI:~$</span> python app.py</div>
+                    <div class="line">--------------------------------------------------</div>
+                    <div class="line" style="color: var(--neon-pink)">  Bunny.AI - LARGE ACTION MODEL (LAM) ACTIVE</div>
+                    <div class="line">--------------------------------------------------</div>
+                    <div class="line">  Backend     : Gemini-2.5-Flash</div>
+                    <div class="line">  System Time : 2026-03-18 08:03:56</div>
+                    <div class="line"></div>
+                    <div class="line"><span class="prompt">User ></span> <span class="type-anim">Research the project and email a report...</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="install" class="getting-started">
+        <h2>Unleash Bunny in Seconds</h2>
+        <div class="code-box">
+            <button class="copy-btn"><i class="far fa-copy"></i></button>
+            <code>git clone https://github.com/alekhakumarswain/Bunny.AI.git</code>
+            <code>cd Bunny.AI</code>
+            <code>pip install -r requirements.txt</code>
+            <code>python app.py</code>
+        </div>
+        <p>Ensure your <code>.env</code> file is configured with the necessary API keys.</p>
+    </section>
+
+    <footer>
+        <div class="footer-logo">
+            <i class="fas fa-rabbit"></i> Bunny.AI
+        </div>
+        <div class="footer-links">
+            <a href="https://github.com/alekhakumarswain/Bunny.AI">Documentation</a>
+            <a href="https://github.com/alekhakumarswain/Bunny.AI/issues">Support</a>
+            <a href="https://github.com/alekhakumarswain/Bunny.AI">License</a>
+        </div>
+        <div class="social-links">
+            <a href="https://github.com/alekhakumarswain"><i class="fab fa-github"></i></a>
+            <a href="#"><i class="fab fa-twitter"></i></a>
+            <a href="#"><i class="fab fa-linkedin"></i></a>
+        </div>
+        <p style="width: 100%; text-align: center; margin-top: 40px; font-size: 0.8rem;">
+            Built with ❤️ by <a href="https://alekhakumarswain.vercel.app" style="color: var(--text-primary); text-decoration: none;">Alekh Kumar Swain</a>. 
+            Large Action Model philosophy applied.
+        </p>
+    </footer>
+
+    <!-- Chat Widget HTML -->
+    <div class="chat-widget">
+        <div class="chat-window" id="chatWindow">
+            <div class="chat-header">
+                <div class="status-dot"></div>
+                <h4>Bunny.AI Assistant</h4>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <div class="message bot">Hello! I'm Bunny.AI. How can I act for you today? 🐰</div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" class="chat-input" id="chatInput" placeholder="Type a command...">
+                <button class="send-btn" id="sendBtn"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+        <div class="chat-button" id="chatToggleButton">
+            <i class="fas fa-comment-dots"></i>
+        </div>
+    </div>
+
+    <script>
+        // Smooth scroll for nav links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Copy code to clipboard
+        document.querySelector('.copy-btn').addEventListener('click', function() {
+            const code = Array.from(document.querySelectorAll('.code-box code'))
+                .map(c => c.innerText)
+                .join('\n');
+            navigator.clipboard.writeText(code);
+            this.innerHTML = '<i class="fas fa-check" style="color:var(--neon-cyan)"></i>';
+            setTimeout(() => {
+                this.innerHTML = '<i class="far fa-copy"></i>';
+            }, 2000);
+        });
+
+        // Scroll Reveal effect
+        window.addEventListener('scroll', () => {
+            const cards = document.querySelectorAll('.feature-card');
+            cards.forEach(card => {
+                const rect = card.getBoundingClientRect();
+                if (rect.top < window.innerHeight - 100) {
+                    card.style.opacity = "1";
+                    card.style.transform = "translateY(0)";
+                }
+            });
+        });
+
+        // Initial state for reveal
+        document.querySelectorAll('.feature-card').forEach(card => {
+            card.style.opacity = "0";
+            card.style.transform = "translateY(50px)";
+        });
+
+        // Chat Widget Logic
+        const chatToggle = document.getElementById('chatToggleButton');
+        const chatWindow = document.getElementById('chatWindow');
+        const sendBtn = document.getElementById('sendBtn');
+        const chatInput = document.getElementById('chatInput');
+        const chatMessages = document.getElementById('chatMessages');
+
+        chatToggle.addEventListener('click', () => {
+            chatWindow.style.display = chatWindow.style.display === 'flex' ? 'none' : 'flex';
+        });
+
+        async function sendMessage() {
+            const text = chatInput.value.trim();
+            if (!text) return;
+
+            // Get password
+            let pwd = localStorage.getItem('bunny_gui_pass');
+            if (!pwd) {
+                pwd = prompt("Bunny.AI - Enter Access Password:");
+                if (!pwd) return;
+                localStorage.setItem('bunny_gui_pass', pwd);
+            }
+
+            // Add User Message
+            appendMessage('user', text);
+            chatInput.value = '';
+
+            // Loading state
+            const loadingMsg = appendMessage('bot', 'Thinking...');
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text, password: pwd })
+                });
+                const data = await response.json();
+                
+                loadingMsg.remove();
+                if (response.status === 401) {
+                    localStorage.removeItem('bunny_gui_pass');
+                    appendMessage('bot', 'Error: Invalid password. Please refresh and try again.');
+                    return;
+                }
+
+                if (data.reply) {
+                    appendMessage('bot', data.reply);
+                } else {
+                    appendMessage('bot', 'Error: ' + (data.error || 'Unknown error'));
+                }
+            } catch (err) {
+                loadingMsg.remove();
+                appendMessage('bot', 'Failed to connect to backend.');
+            }
+        }
+
+        function appendMessage(role, text) {
+            const msg = document.createElement('div');
+            msg.className = `message ${role}`;
+            msg.innerText = text;
+            chatMessages.appendChild(msg);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            return msg;
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+    </script>
+</body>
+</html>

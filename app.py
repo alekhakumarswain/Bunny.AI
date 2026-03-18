@@ -12,6 +12,8 @@ from Tools.tool_creator import create_tool
 from Tools.sandbox import sandbox_execute
 from Tools.pdf_resume import generate_resume_pdf
 from Tools.core_tools import get_headers, host_static
+import webbrowser
+from flask import Flask, request, jsonify, send_from_directory
 
 # --- Global State for Background Tasks ---
 scheduled_tasks = []
@@ -266,12 +268,10 @@ tools_list = [
 #  rest of this file needs zero branching logic.
 # ──────────────────────────────────────────────────────────
 
-class OllamaChat:
+class ManualToolChat:
     """
-    Stateful chat session backed by a local Ollama model.
-    Tool-calling is handled manually: the model is asked to
-    write  TOOL:<name>(<args json>)  lines which we intercept
-    and execute before sending the result back.
+    Chat session for providers without native tool-calling.
+    Instructs the model to write TOOL:<name>(<args json>) lines.
     """
 
     TOOL_MAP = {
@@ -281,9 +281,13 @@ class OllamaChat:
         "list_dir":            list_dir,
         "schedule_task":       schedule_task,
         "get_current_time":    get_current_time,
-        "send_mail_tool":      send_mail_tool,  # supports is_html kwarg
+        "send_mail_tool":      send_mail_tool,
         "web_search_tool":     web_search_tool,
         "web_scrape_tool":     web_scrape_tool,
+        "get_headers_tool":    get_headers_tool,
+        "host_static_tool":    host_static_tool,
+        "extract_profile_from_text": extract_profile_from_text,
+        "generate_resume_pdf_tool": generate_resume_pdf_tool,
         "create_and_run_tool": create_and_run_tool,
         "run_code_in_sandbox": run_code_in_sandbox,
     }
@@ -295,43 +299,29 @@ class OllamaChat:
         "  TOOL:write_file({\"path\": \"...\", \"content\": \"...\"})\n"
         "  TOOL:list_dir({\"path\": \"...\"})\n"
         "  TOOL:schedule_task({\"task_description\": \"...\", \"delay_seconds\": 0})\n"
-        "  TOOL:get_current_time({})\n"
         "  TOOL:send_mail_tool({\"to_email\": \"...\", \"subject\": \"...\", \"body\": \"...\", \"is_html\": true, \"attachment_paths\": [\"/absolute/path/file.pdf\"]})\n"
         "  TOOL:web_search_tool({\"query\": \"...\"})\n"
         "  TOOL:web_scrape_tool({\"url\": \"...\"})\n"
-        "  TOOL:get_headers_tool({\"url\": \"...\"})\n"
-        "  TOOL:host_static_tool({\"directory_path\": \"...\"})\n"
-        "  TOOL:extract_profile_from_text({\"raw_text\": \"...\"})\n"
-        "  TOOL:generate_resume_pdf_tool({\"profile_json_str\": \"...\"})\n"
         "  TOOL:create_and_run_tool({\"task_description\": \"...\"})\n"
-        "  TOOL:run_code_in_sandbox({\"code\": \"...\"})\n"
         "After a TOOL call you will receive a TOOL_RESULT line, then continue your reply.\n"
     )
 
-    def __init__(self, system_instruction: str):
-        self.system_instruction = system_instruction + self.TOOL_GUIDE
-        self.history: list[dict] = []  # {"role": ..., "content": ...}
+    def __init__(self, controller: AIController, extra_system: str = ""):
+        self.controller = controller
+        self.system_instruction = controller.system_instruction + self.TOOL_GUIDE + extra_system
+        self.history = []
 
     def send_message(self, user_text: str) -> _SimpleResponse:
-        import requests, re
+        import json, re
 
-        self.history.append({"role": "user", "content": user_text})
+        self.history.append(f"User: {user_text}")
 
-        for _ in range(6):   # allow up to 6 tool round-trips
-            messages = [{"role": "system", "content": self.system_instruction}] + self.history
-
-            try:
-                resp = requests.post(
-                    f"{os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')}/api/chat",
-                    json={"model": os.getenv("OLLAMA_MODEL", "gemma3:1b"),
-                          "messages": messages, "stream": False},
-                    timeout=120,
-                )
-                resp.raise_for_status()
-                assistant_text = resp.json().get("message", {}).get("content", "")
-            except Exception as exc:
-                assistant_text = f"[Ollama Error] {exc}"
-                break
+        for _ in range(8):  # Allow up to 8 tool round-trips
+            prompt = "\n".join(self.history)
+            
+            # Use the controller's generate_response
+            response = self.controller.generate_response(prompt)
+            assistant_text = getattr(response, "text", str(response))
 
             # Check for a tool call on its own line
             tool_match = re.search(r"TOOL:(\w+)\((\{.*?\})\)", assistant_text, re.DOTALL)
@@ -351,16 +341,13 @@ class OllamaChat:
                 else:
                     tool_result = f"Unknown tool: {tool_name}"
 
-                # Feed the result back as a user turn so model can continue
-                self.history.append({"role": "assistant", "content": assistant_text})
-                self.history.append({"role": "user",
-                                     "content": f"TOOL_RESULT:{tool_name}:{tool_result}"})
+                self.history.append(f"Assistant: {assistant_text}")
+                self.history.append(f"TOOL_RESULT:{tool_name}:{tool_result}")
             else:
-                # No tool call → final answer
-                self.history.append({"role": "assistant", "content": assistant_text})
+                self.history.append(f"Assistant: {assistant_text}")
                 return _SimpleResponse(assistant_text)
 
-        return _SimpleResponse(assistant_text)
+        return _SimpleResponse("Error: Max tool retries reached.")
 
 
 # ──────────────────────────────────────────────────────────
@@ -369,9 +356,8 @@ class OllamaChat:
 
 def create_chat(controller: AIController, extra_system: str = "") -> object:
     """Return a chat session for the active backend."""
-    if controller.use_ollama:
-        sys_instr = controller.system_instruction + (f"\n\n{extra_system}" if extra_system else "")
-        return OllamaChat(system_instruction=sys_instr)
+    if controller.provider != "gemini":
+        return ManualToolChat(controller, extra_system=extra_system)
 
     # Gemini path
     sys_instr = controller.system_instruction + (f"\n\n{extra_system}" if extra_system else "")
@@ -438,6 +424,23 @@ def task_monitor(controller: AIController):
         time.sleep(5)
 
 
+# --- Interface Selection ---
+
+def choose_interface():
+    """Ask the user to choose between GUI and CLI."""
+    while True:
+        print("\n\033[95m" + "─"*50 + "\033[0m")
+        print("\033[96m  Welcome to Bunny.AI! Select your interface:\033[0m")
+        print(f"    \033[93m[1]\033[0m  GUI (Web Interface)")
+        print(f"    \033[93m[2]\033[0m  CLI (Terminal Chat)")
+        print("\033[95m" + "─"*50 + "\033[0m")
+        print("\033[94mChoice > \033[0m", end="")
+        
+        choice = input().strip()
+        if choice == "1": return "GUI"
+        if choice == "2": return "CLI"
+        print("\033[91m  Invalid choice — please enter 1 or 2.\033[0m")
+
 # --- Model Selection Menu ---
 
 def choose_model() -> AIController:
@@ -446,14 +449,16 @@ def choose_model() -> AIController:
     Loops until the user makes a valid choice.
     """
     models = [
-        ("Gemini 2.5 Flash  (cloud – full tool calling)",  False, "gemini-2.5-flash"),
-        ("gemma3:1b         (local – Ollama, no API key)",  True,  "gemma3:1b"),
+        ("Gemini 2.5 Flash", False, "gemini-2.5-flash", "gemini"),
+        ("OpenAI GPT-4o",    False, "gpt-4o",           "openai"),
+        ("Groq Llama 3",     False, "llama3-70b-8192",  "groq"),
+        ("Ollama local",     True,  "gemma3:1b",        "ollama"),
     ]
 
     while True:
         print("\n\033[95m" + "─"*50 + "\033[0m")
-        print("\033[96m  Select a model:\033[0m")
-        for i, (label, _, _mid) in enumerate(models, 1):
+        print("\033[96m  Select a model backend:\033[0m")
+        for i, (label, _, _mid, _prov) in enumerate(models, 1):
             print(f"    \033[93m[{i}]\033[0m  {label}")
         print("\033[95m" + "─"*50 + "\033[0m")
         print("\033[94mChoice > \033[0m", end="")
@@ -464,16 +469,90 @@ def choose_model() -> AIController:
             print("\n\033[91mExiting.\033[0m")
             raise SystemExit(0)
 
-        if choice in ["1", "2"]:
-            _, use_ollama, model_id = models[int(choice) - 1]
-            return AIController(model_id=model_id, use_ollama=use_ollama)
+        if choice.isdigit() and 1 <= int(choice) <= len(models):
+            _, use_ollama, model_id, provider = models[int(choice) - 1]
+            return AIController(model_id=model_id, use_ollama=use_ollama, provider=provider)
 
-        print("\033[91m  Invalid choice — please enter 1 or 2.\033[0m")
+        print(f"\033[91m  Invalid choice — please enter 1-{len(models)}.\033[0m")
 
+
+# --- Vercel Compatibility ---
+# Vercel needs a top-level Flask 'app' object.
+# We also want to skip interactive model selection in serverless.
+is_vercel = os.getenv("VERCEL") == "1"
+
+# Initialize a default controller for Vercel (read from env)
+# In Vercel, it defaults to Gemini and the environment variables must be set.
+vercel_controller = None
+if is_vercel:
+    vercel_controller = AIController() # Defaults to Gemini
 
 # --- Main Application Loop ---
 
+def run_flask_server(controller: AIController):
+    """Starts a Flask server to serve the GUI and API."""
+    app = Flask(__name__, static_folder="Frontend", static_url_path="")
+    chat_session = create_chat(controller)
+
+    @app.route('/')
+    def index():
+        return send_from_directory("Frontend", "index.html")
+
+    @app.route('/chat', methods=['POST'])
+    def chat():
+        data = request.json
+        user_input = data.get("message")
+        user_pass  = data.get("password")
+        
+        gui_password = os.getenv("GUI_PASSWORD", "bunny123")
+        
+        if user_pass != gui_password:
+            return jsonify({"error": "Unauthorized: Invalid password"}), 401
+            
+        if not user_input:
+            return jsonify({"error": "No message provided"}), 400
+        
+        try:
+            response = chat_session.send_message(user_input)
+            final_text = extract_text(response)
+            return jsonify({"reply": final_text})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    if not is_vercel:
+        print(f"\n\033[92m[GUI Active]\033[0m Server running at http://127.0.0.1:5000")
+        print("\033[93mOpening browser...\033[0m")
+        webbrowser.open("http://127.0.0.1:5000")
+        app.run(port=5000, debug=False, use_reloader=False)
+    
+    return app
+
+# For Vercel Serverless (Must be 'app' or 'app' assigned to 'server')
+if is_vercel:
+    app = run_flask_server(vercel_controller)
+else:
+    app = None
+
 def main():
+    if is_vercel:
+        # Should not be reached in vercel env as it imports the file
+        return
+
+    interface = choose_interface()
+    
+    if interface == "GUI":
+        # For GUI, we still need to choose a model first
+        controller = choose_model()
+        
+        # Start background tasks
+        monitor_thread = threading.Thread(target=task_monitor, args=(controller,), daemon=True)
+        monitor_thread.start()
+        
+        # Run Web Server
+        run_flask_server(controller)
+        return
+
+    # CLI Path (Existing)
     controller = choose_model()
 
     backend_label = f"Ollama ({controller.model_id})" if controller.use_ollama else f"Gemini ({controller.model_id})"
@@ -519,7 +598,7 @@ def main():
                 print(f"\n\033[92mBunny.AI >\033[0m {final_text}")
 
         except KeyboardInterrupt:
-            print("\n\033[91mStopped.\033[0m")
+            print("\033[91mStopped.\033[0m")
             break
         except Exception as e:
             if "503" in str(e) or "UNAVAILABLE" in str(e).upper():
