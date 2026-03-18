@@ -125,7 +125,7 @@ class AIController:
         else: # Gemini default
             api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
             self.client   = genai.Client(api_key=api_key)
-            self.model_id = self.model_id or "gemini-2.0-flash"
+            self.model_id = self.model_id or "gemini-2.5-flash"
             print(f"[LLM] Using Gemini backend → {self.model_id}")
 
         self.history = []
